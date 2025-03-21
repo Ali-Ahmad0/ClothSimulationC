@@ -20,12 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\common\vec2.c" />
+    <ClCompile Include="src\constraint\constraint.c" />
     <ClCompile Include="src\engine\engine.c" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\particle\particle.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common\vec2.h" />
+    <ClInclude Include="src\constraint\constraint.h" />
     <ClInclude Include="src\engine\engine.h" />
     <ClInclude Include="src\particle\particle.h" />
   </ItemGroup>

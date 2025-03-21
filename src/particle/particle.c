@@ -1,6 +1,8 @@
 #include "particle.h"
 
 void VerletIntegrate(Particle* particle, Vector2 accel, float dt) {
+	if (particle->stationary) return;
+	
 	Vector2 new_pos = (Vector2){ .x = 0, .y = 0 };
 
 	// x(t + dt) = 2x(t) - x(t - dt) + (a(t) * dt * dt)

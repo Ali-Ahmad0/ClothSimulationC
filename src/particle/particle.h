@@ -6,6 +6,7 @@ typedef struct {
 	Vector2 curr_pos;
 	Vector2 prev_pos;
 
+	int stationary;
 } Particle;
 
 // Movement using verlet integration
