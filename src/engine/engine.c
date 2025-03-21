@@ -1,9 +1,12 @@
 #include "engine.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
 #include "../common/vec2.h"
 
 void CreateClothGrid(Engine* engine, int rows, int cols, float spacing);
+float PointSegmentDistanceSquared(Vector2 point, Vector2 a, Vector2 b);
 
 Engine EngineCreate() {
     // Initialize the engine
@@ -13,10 +16,59 @@ Engine EngineCreate() {
     return (Engine) { .particles = NULL, .particle_count = 0, .constraints = NULL, .constraint_count = 0 };
 }
 
+// Point to segment distance algorithm
+float PointSegmentDistanceSquared(Vector2 point, Vector2 a, Vector2 b) {
+    // Vector from a to b
+    Vector2 ab = { b.x - a.x, b.y - a.y };
+    
+    // Vector from a to the point p
+    Vector2 ap = { point.x - a.x, point.y - a.y };
+
+    // Project ap onto ab
+    float dot = Vec2Dot(ab, ap);
+    float ab_mag_sq = Vec2MagSq(ab);
+    float t = fmaxf(0, fminf(1, dot / ab_mag_sq));
+
+    // Closest point on the line segment
+    Vector2 closest = { a.x + t * ab.x, a.y + t * ab.y };
+
+    // Distance between the point and the closest point on the line segment
+    float dx = point.x - closest.x;
+    float dy = point.y - closest.y;
+    return dx * dx + dy * dy;
+}
+
 int EngineEvents(Engine* engine) {
     // Check for quit event
     if (WindowShouldClose()) {
         return 1;
+    }
+
+    // Handle cloth tearing
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 mouse_position = GetMousePosition();
+        
+        // Find the nearest constraint
+        float min_distance_sq = INFINITY;
+        Constraint* nearest = NULL;
+
+        for (unsigned int i = 0; i < engine->constraint_count; i++) {
+            float distance_sq = PointSegmentDistanceSquared(
+                mouse_position, 
+                engine->constraints[i].particle_a->curr_pos,
+                engine->constraints[i].particle_b->curr_pos
+            );
+
+            if (distance_sq < min_distance_sq) {
+                min_distance_sq = distance_sq;
+                nearest = &engine->constraints[i];
+            }
+        }
+
+        // Deactivate constraint
+        if (nearest && sqrtf(min_distance_sq) < 8.0f) {
+            nearest->active = 0;
+        }
     }
 
     return 0;
@@ -34,7 +86,7 @@ void CreateClothGrid(Engine* engine, int rows, int cols, float spacing) {
     }
 
     // Initialize constraints array
-    unsigned int max_constraints = rows * (cols - 1) + (rows - 1) * cols + 2 * (rows - 1) * (cols - 1);
+    unsigned int max_constraints = rows * (cols - 1) + cols * (rows - 1);
     engine->constraints = malloc(sizeof(Constraint) * max_constraints);
 
     if (!engine->constraints) {
@@ -102,13 +154,16 @@ void EngineUpdate(Engine* engine) {
         for (int i = 0; i < 24; i++) {
             for (unsigned int i = 0; i < engine->constraint_count; i++) {
                 SatisfyConstraint(&engine->constraints[i]);
-                DrawLine(
-                    (int)engine->constraints[i].particle_a->curr_pos.x,
-                    (int)engine->constraints[i].particle_a->curr_pos.y,
-                    (int)engine->constraints[i].particle_b->curr_pos.x,
-                    (int)engine->constraints[i].particle_b->curr_pos.y,
-                    WHITE
-                );
+    
+                if (engine->constraints[i].active) {
+                    DrawLine(
+                        (int)engine->constraints[i].particle_a->curr_pos.x,
+                        (int)engine->constraints[i].particle_a->curr_pos.y,
+                        (int)engine->constraints[i].particle_b->curr_pos.x,
+                        (int)engine->constraints[i].particle_b->curr_pos.y,
+                        WHITE
+                    );
+                }
             }
         }
         EndDrawing();

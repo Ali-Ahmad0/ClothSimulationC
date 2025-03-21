@@ -7,6 +7,8 @@ typedef struct {
 	Particle* particle_b;
 
 	float initial_distance;
+
+	int active;
 } Constraint;
 
 Constraint AddConstraint(Particle* particle_a, Particle* particle_b);

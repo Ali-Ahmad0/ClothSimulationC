@@ -13,10 +13,13 @@ Constraint AddConstraint(Particle* particle_a, Particle* particle_b) {
 		(particle_a->curr_pos.y - particle_b->curr_pos.y) * (particle_a->curr_pos.y - particle_b->curr_pos.y)
 	);
 
-	return (Constraint) { .particle_a = particle_a, .particle_b = particle_b, .initial_distance = initial_distance };
+	return (Constraint) { .particle_a = particle_a, .particle_b = particle_b, .initial_distance = initial_distance, .active = 1 };
 }
 
 void SatisfyConstraint(Constraint* c) {
+    if (!c->active)
+        return;
+    
     // Skip if both particles are stationary
     if (c->particle_a->stationary && c->particle_b->stationary) 
         return;
