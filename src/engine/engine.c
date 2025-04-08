@@ -10,7 +10,7 @@ float PointSegmentDistanceSquared(Vector2 point, Vector2 a, Vector2 b);
 
 Engine EngineCreate() {
     // Initialize the engine
-    InitWindow(640, 480, "Particle");
+    InitWindow(1600, 900, "Particle");
     SetTargetFPS(60);
 
     return (Engine) { .particles = NULL, .particle_count = 0, .constraints = NULL, .constraint_count = 0 };
@@ -45,7 +45,7 @@ int EngineEvents(Engine* engine) {
     }
 
     // Handle cloth tearing
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         Vector2 mouse_position = GetMousePosition();
         
         // Find the nearest constraint
@@ -66,7 +66,7 @@ int EngineEvents(Engine* engine) {
         }
 
         // Deactivate constraint
-        if (nearest && sqrtf(min_distance_sq) < 8.0f) {
+        if (nearest && sqrtf(min_distance_sq) < 12.0f) {
             nearest->active = 0;
         }
     }
@@ -134,7 +134,12 @@ void CreateClothGrid(Engine* engine, int rows, int cols, float spacing) {
 }
 
 void EngineUpdate(Engine* engine) {
-    CreateClothGrid(engine, 16, 12, METER * 0.75);
+    CreateClothGrid(engine, 60, 40, 12);
+
+    int frames = 0;
+    int frames_per_second = 0;
+
+    float elapsed_time = 0.0f;
 
     while (!WindowShouldClose()) {
         if (EngineEvents(engine) != 0) {
@@ -144,6 +149,18 @@ void EngineUpdate(Engine* engine) {
         BeginDrawing();
         ClearBackground(BLACK);
 
+        // Render FPS
+        frames++;
+        float dt = GetFrameTime();
+        elapsed_time += dt;
+
+        if (elapsed_time >= 1.0f) {
+            frames_per_second = frames;
+            frames = 0;
+            elapsed_time -= 1.0f;
+        }
+        //DrawText(TextFormat("FPS: %i", frames_per_second), 16, 16, 32, GREEN);
+
         // Update and draw particles
         for (unsigned int i = 0; i < engine->particle_count; i++) {
             Vector2 gravity = (Vector2){ .x = 0, .y = 9.81f * METER };
@@ -151,7 +168,7 @@ void EngineUpdate(Engine* engine) {
             VerletIntegrate(&engine->particles[i], gravity, GetFrameTime());
         }
 
-        for (int i = 0; i < 24; i++) {
+        for (int i = 0; i < 32; i++) {
             for (unsigned int i = 0; i < engine->constraint_count; i++) {
                 SatisfyConstraint(&engine->constraints[i]);
     
